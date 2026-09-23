@@ -60,7 +60,7 @@ def do_user_task(browser, username, cookies, targets):
                 "ERROR": "内部错误",
             }.get(res.get("status"), res.get("status"))
             logger.error(f"账号 {username} 操作前检查未通过：{reason}，跳过该账号")
-            return
+            return {"error": reason, "ok": 0, "fail": 1}
 
         logger.info(
             f"账号 {username} 门禁通过  user_id={res.get('user_id')} "
