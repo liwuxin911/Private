@@ -2,6 +2,7 @@ import os
 import json
 import traceback
 import urllib.request
+import urllib.parse
 from utils.logger import setup_logger
 from utils.config import get_config, get_userData
 from core.msg_builder import build_message
@@ -134,18 +135,16 @@ def do_user_task(browser, username, cookies, targets):
 
 
 def notify_wechat(title: str, content: str) -> None:
-    """跑完后把结果推送到微信（PushPlus）。没配 PUSHPLUS_TOKEN 就静默跳过。"""
-    token = os.getenv("PUSHPLUS_TOKEN", "").strip()
-    if not token:
+    """跑完后把结果推送到微信（Server酱）。没配 SCT_SENDKEY 就静默跳过。"""
+    key = os.getenv("SCT_SENDKEY", "").strip()
+    if not key:
         return
     try:
-        data = json.dumps(
-            {"token": token, "title": title, "content": content, "template": "txt"}
-        ).encode("utf-8")
+        data = urllib.parse.urlencode({"title": title, "desp": content}).encode("utf-8")
         req = urllib.request.Request(
-            "http://www.pushplus.plus/send",
+            f"https://sctapi.ftqq.com/{key}.send",
             data=data,
-            headers={"Content-Type": "application/json"},
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
         urllib.request.urlopen(req, timeout=10).read()
         logger.info("已推送微信通知")
