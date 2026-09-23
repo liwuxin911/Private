@@ -1,20 +1,17 @@
-name: DouYin Spark Flow Schedule Run
+﻿name: DouYin Spark Flow Schedule Run
 
-# 定时跑一轮任务，环境在 runner 上现搭（对应 Docker 的定时 cron 形态）。
-# 配置来自 Variables / Secrets（Environment: user-data），由 export_github_env.py
-# 经 toJson 注入进程环境 —— COOKIES_<抖音号> 键名跟着账号走，没法逐条写 env 映射。
-on:
-  workflow_dispatch: # 允许手动触发
-  schedule: # 定时任务
-    - cron: "0 0 * * *" # 每天 0:00 UTC（对应北京时间 8:00）
-
-# 同一账号并发登录会把会话挤掉
+# 瀹氭椂璺戜竴杞换鍔★紝鐜鍦?runner 涓婄幇鎼紙瀵瑰簲 Docker 鐨勫畾鏃?cron 褰㈡€侊級銆?# 閰嶇疆鏉ヨ嚜 Variables / Secrets锛圗nvironment: user-data锛夛紝鐢?export_github_env.py
+# 缁?toJson 娉ㄥ叆杩涚▼鐜 鈥斺€?COOKIES_<鎶栭煶鍙? 閿悕璺熺潃璐﹀彿璧帮紝娌℃硶閫愭潯鍐?env 鏄犲皠銆?on:
+  workflow_dispatch: # 鍏佽鎵嬪姩瑙﹀彂
+  schedule: # 瀹氭椂浠诲姟
+    - cron: "0 0 * * *" # 姣忓ぉ 0:00 UTC锛堝搴斿寳浜椂闂?8:00锛?
+# 鍚屼竴璐﹀彿骞跺彂鐧诲綍浼氭妸浼氳瘽鎸ゆ帀
 concurrency:
   group: douyin-spark-flow
   cancel-in-progress: false
 
 env:
-  # 与 Dockerfile 的 CLOAK_CHROMIUM_VERSION / CLOAK_BINARY_SHA256 一致，改要一起改
+  # 涓?Dockerfile 鐨?CLOAK_CHROMIUM_VERSION / CLOAK_BINARY_SHA256 涓€鑷达紝鏀硅涓€璧锋敼
   CLOAK_CHROMIUM_VERSION: 146.0.7680.177.5
   CLOAK_BINARY_SHA256: 4a12bcde95fa1bb1beef2b41ab5e5c27c36be78e3be3d0dac8c64d705216670e
   CLOAKBROWSER_AUTO_UPDATE: "false"
@@ -22,9 +19,8 @@ env:
 
 jobs:
   run-main:
-    timeout-minutes: 40 # 首次要下字体 + Chromium + 依赖
+    timeout-minutes: 40 # 棣栨瑕佷笅瀛椾綋 + Chromium + 渚濊禆
     runs-on: ubuntu-latest
-    environment: user-data
     steps:
     - uses: actions/checkout@v4
 
@@ -42,14 +38,11 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    # 只装依赖库；浏览器本体用下面的隐身 Chromium
-    - name: 安装 Chromium 系统依赖
+    # 鍙渚濊禆搴擄紱娴忚鍣ㄦ湰浣撶敤涓嬮潰鐨勯殣韬?Chromium
+    - name: 瀹夎 Chromium 绯荤粺渚濊禆
       run: python -m playwright install-deps chromium
 
-    # 缺 Windows 字体是字体指纹的破绽；失败只告警，不阻断当天任务。
-    # 这里不加 actions/cache：下载失败时目录是空的，cache 仍会把它存成正式条目，
-    # 之后每次运行都命中空缓存、下载步骤被跳过，字体就再也装不上了。
-    - name: 下载并安装 Windows 默认字体
+    # 缂?Windows 瀛椾綋鏄瓧浣撴寚绾圭殑鐮寸唤锛涘け璐ュ彧鍛婅锛屼笉闃绘柇褰撳ぉ浠诲姟銆?    # 杩欓噷涓嶅姞 actions/cache锛氫笅杞藉け璐ユ椂鐩綍鏄┖鐨勶紝cache 浠嶄細鎶婂畠瀛樻垚姝ｅ紡鏉＄洰锛?    # 涔嬪悗姣忔杩愯閮藉懡涓┖缂撳瓨銆佷笅杞芥楠よ璺宠繃锛屽瓧浣撳氨鍐嶄篃瑁呬笉涓婁簡銆?    - name: 涓嬭浇骞跺畨瑁?Windows 榛樿瀛椾綋
       continue-on-error: true
       run: |
         set -e
@@ -66,18 +59,17 @@ jobs:
         done < <(find /tmp/wf -type f \( -iname "*.ttf" -o -iname "*.ttc" -o -iname "*.otf" \) -print0)
         sudo fc-cache -f >/dev/null 2>&1 || true
 
-        echo "==> 安装字体 $count 个"
+        echo "==> 瀹夎瀛椾綋 $count 涓?
         fc-list | grep -qiE 'segoe ui|microsoft yahei|simsun|calibri' \
-          && echo "==> Windows 字体就绪" \
-          || echo "::warning::fc-list 里没看到关键 Windows 字体"
+          && echo "==> Windows 瀛椾綋灏辩华" \
+          || echo "::warning::fc-list 閲屾病鐪嬪埌鍏抽敭 Windows 瀛椾綋"
 
-    # 必须用 CloakHQ 的构建（cloakbrowser 启动的是自己的二进制）
-    - name: 下载隐身 Chromium
+    # 蹇呴』鐢?CloakHQ 鐨勬瀯寤猴紙cloakbrowser 鍚姩鐨勬槸鑷繁鐨勪簩杩涘埗锛?    - name: 涓嬭浇闅愯韩 Chromium
       run: |
         set -euo pipefail
         tag="chromium-v${CLOAK_CHROMIUM_VERSION}"
         url="https://github.com/CloakHQ/CloakBrowser/releases/download/${tag}/cloakbrowser-linux-x64.tar.gz"
-        echo "==> 下载 $url"
+        echo "==> 涓嬭浇 $url"
         curl -fL --connect-timeout 15 --max-time 600 --retry 2 --retry-delay 2 \
           -o /tmp/cb.tar.gz "$url"
         echo "${CLOAK_BINARY_SHA256}  /tmp/cb.tar.gz" | sha256sum -c -
@@ -87,11 +79,11 @@ jobs:
         rm -f /tmp/cb.tar.gz
 
         chrome="$(find /tmp/cb_extract -maxdepth 6 -type f -name chrome -perm -u+x | head -n 1)"
-        test -n "${chrome}" || { echo "发布包里没找到 chrome 二进制" >&2; exit 1; }
-        # 必须整目录拷贝：icudtl.dat / *.pak / locales 缺一个都启动不了
+        test -n "${chrome}" || { echo "鍙戝竷鍖呴噷娌℃壘鍒?chrome 浜岃繘鍒? >&2; exit 1; }
+        # 蹇呴』鏁寸洰褰曟嫹璐濓細icudtl.dat / *.pak / locales 缂轰竴涓兘鍚姩涓嶄簡
         cp -a "$(dirname "${chrome}")/." "$HOME/cloakbrowser/"
         chmod +x "$HOME/cloakbrowser/chrome"
-        test -f "$HOME/cloakbrowser/icudtl.dat" || { echo "缺 icudtl.dat" >&2; exit 1; }
+        test -f "$HOME/cloakbrowser/icudtl.dat" || { echo "缂?icudtl.dat" >&2; exit 1; }
 
         "$HOME/cloakbrowser/chrome" --version
         echo "CLOAKBROWSER_BINARY_PATH=$HOME/cloakbrowser/chrome" >> "$GITHUB_ENV"
@@ -112,7 +104,7 @@ jobs:
         path: logs/
 
   workflow-keepalive:
-    # 仓库 60 天没活动会被 GitHub 停掉 schedule
+    # 浠撳簱 60 澶╂病娲诲姩浼氳 GitHub 鍋滄帀 schedule
     if: github.event_name == 'schedule'
     runs-on: ubuntu-latest
     permissions:
