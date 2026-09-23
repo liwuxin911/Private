@@ -6,7 +6,7 @@ name: DouYin Spark Flow Schedule Run
 on:
   workflow_dispatch: # 允许手动触发
   schedule: # 定时任务
-    - cron: "30 23 * * *" # 每天 23:30 UTC（对应北京时间 7:30）
+    - cron: "0 0 * * *" # 每天 0:00 UTC（对应北京时间 8:00）
 
 # 同一账号并发登录会把会话挤掉
 concurrency:
